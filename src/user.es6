@@ -23,19 +23,8 @@ const kafkaBusFactory = require('./kafkaBusFactory.es6');
 const db = dbFactory("mongodb://localhost:27017/pfin");
 const kafkaBus = kafkaBusFactory(kafkaHost, 'User-Service');
 
-// kafkaBus.producer.on('ready', () => {
-//     const userService = userServiceFactory(db);
-//     const kafkaService = kafkaServiceFactory(kafkaBus);
-//     const userController = userControllerFactory(userService, kafkaService);
-//     userController.subscribe('user-find-one-request', userController.findOne);
-//     userController.subscribe('user-find-one-and-update-request', userController.findOneAndUpdate);
-//     userController.subscribe('user-find-one-response', userController.getFindOneResponse);
-// });
-
 const userService = userServiceFactory(db);
 const kafkaService = kafkaServiceFactory(kafkaBus);
 const userController = userControllerFactory(userService, kafkaService);
 userController.subscribe('user-find-one-request', userController.findOne);
 userController.subscribe('user-find-one-and-update-request', userController.findOneAndUpdate);
-// userController.subscribe('user-find-one-response', userController.getFindOneResponse);
-

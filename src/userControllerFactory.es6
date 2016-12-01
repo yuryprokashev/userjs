@@ -16,7 +16,7 @@ module.exports = (userService, kafkaService) =>{
         userService.findOneAndUpdate(query, profile)
             .then(
                 (result) => {
-                    userController.send('user-find-one-and-update-response', {user: result, request: {id: requestId}});
+                    userController.send('user-find-one-and-update-response', {user: result, requestId: requestId});
                 },
                 (error) => {
                     userController.handleError('error updating user', error);
@@ -33,7 +33,7 @@ module.exports = (userService, kafkaService) =>{
         userService.findOne(query)
             .then(
                 (result) => {
-                    userController.send('user-find-one-response', {user: result, request: {id: requestId}});
+                    userController.send('user-find-one-response', {user: result, requestId: requestId});
                 },
                 (error) => {
                     userController.handleError('error searching user' , error);
@@ -87,7 +87,7 @@ module.exports = (userService, kafkaService) =>{
     };
 
     userController.extractRequestId = (kafkaRequest) => {
-        let requestId = JSON.parse(kafkaRequest.value).request.id;
+        let requestId = JSON.parse(kafkaRequest.value).requestId;
 
         if(requestId === undefined || requestId === null) {
             userController.handleError('requestId is null', kafkaRequest);

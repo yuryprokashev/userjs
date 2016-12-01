@@ -15,7 +15,7 @@ module.exports = db => {
                     .exec(
                         (err, result) => {
                             if(err){
-                                reject(err);
+                                return reject(err);
                             }
                             resolve(result);
                         }
@@ -39,7 +39,7 @@ module.exports = db => {
                 ).exec(
                     (err, result) => {
                         if(err) {
-                            reject(err);
+                            return reject(err);
                         }
                         resolve(result);
                     }
