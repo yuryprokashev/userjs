@@ -33,9 +33,11 @@ module.exports = (userService, kafkaService) =>{
         userService.findOne(query)
             .then(
                 (result) => {
+                    console.log(result);
                     userController.send('user-find-one-response', {user: result, requestId: requestId});
                 },
                 (error) => {
+                    console.log(error);
                     userController.handleError('error searching user' , error);
                 }
             )
