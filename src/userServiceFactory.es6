@@ -11,7 +11,7 @@ module.exports = db => {
     userService.findOne = (query)=> {
         return new Promise(
             (resolve, reject) => {
-                console.log(`userService.findOne with query = ${JSON.stringify(query)}`);
+                // console.log(`userService.findOne with query = ${JSON.stringify(query)}`);
                 User.findOne(query)
                     .exec(
                         (err, result) => {
