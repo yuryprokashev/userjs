@@ -11,6 +11,7 @@ module.exports = db => {
     userService.findOne = (query)=> {
         return new Promise(
             (resolve, reject) => {
+                console.log(`userService.findOne witj quary = ${JSON.stringify(query)}`);
                 User.findOne(query)
                     .exec(
                         (err, result) => {
