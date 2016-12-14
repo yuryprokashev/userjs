@@ -31,7 +31,7 @@ module.exports = (userService, kafkaService) =>{
     //@param: KafkaRequest - which is kafka message containing query in body.
     //@function: parses KafkaRequest; calls userService to find user data; sends response to Kafka
     userController.findOne = (kafkaMessage) => {
-        console.log(kafkaMessage);
+        // console.log(kafkaMessage);
         let context, query;
 
         query = userController.extractQuery(kafkaMessage);
