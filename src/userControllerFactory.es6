@@ -8,18 +8,22 @@ module.exports = (userService, kafkaService) =>{
     //@param: KafkaRequest - which is kafka message containing query in body.
     //@function: parses KafkaRequest; calls userService to find user data; sends response to Kafka
     userController.findOneAndUpdate = (kafkaRequest) => {
-        // console.log(kafkaRequest);
-        let query = userController.extractQuery(kafkaRequest);
-        let profile = userController.extractProfile(kafkaRequest);
-        let topic = userController.extractTopic(kafkaRequest);
-        let requestId = userController.extractRequestId(kafkaRequest);
+        
+        let context, query, profile;
+
+        context = userController.extractContext(kafkaRequest);
+        query = userController.extractQuery(kafkaRequest);
+        profile = userController.extractWriteData(kafkaRequest);
+
         userService.findOneAndUpdate(query, profile)
             .then(
                 (result) => {
-                    userController.send('user-find-one-and-update-response', {user: result, requestId: requestId});
+                    context.response = result;
+                    kafkaService.send('user-find-one-and-update-response', context);
                 },
                 (error) => {
-                    userController.handleError('error updating user', error);
+                    context.response = error;
+                    kafkaService.send('user-find-one-and-update-response', context);
                 }
             );
     };
@@ -27,21 +31,23 @@ module.exports = (userService, kafkaService) =>{
     //@param: KafkaRequest - which is kafka message containing query in body.
     //@function: parses KafkaRequest; calls userService to find user data; sends response to Kafka
     userController.findOne = (kafkaRequest) => {
-        let query = userController.extractQuery(kafkaRequest);
-        let topic = userController.extractTopic(kafkaRequest);
-        let requestId = userController.extractRequestId(kafkaRequest);
+        let context, query;
+
+        query = userController.extractQuery(kafkaRequest);
+        context = userController.extractContext(kafkaRequest);
+
         userService.findOne(query)
             .then(
                 (result) => {
-                    // console.log(result);
-                    userController.send('user-find-one-response', {user: result, requestId: requestId});
+                    context.response = result;
+                    kafkaService.send('user-find-one-response', context);
                 },
                 (error) => {
                     console.log(error);
-                    userController.handleError('error searching user' , error);
+                    context.response = error;
+                    kafkaService.send('user-find-one-response', context);
                 }
             )
-
     };
 
     //@param: topic - kafka topic, where controller has to send the response
@@ -56,53 +62,41 @@ module.exports = (userService, kafkaService) =>{
         kafkaService.subscribe(topic, callback);
     };
 
+    userController.extractContext = (kafkaMessage) => {
+        let context;
+        context = JSON.parse(kafkaMessage.value);
+        if(context === undefined) {
+            let newContext = {};
+            newContext.response = {error: 'arrived context is empty'};
+            kafkaService.send(kafkaMessage.topic, newContext);
+        }
+        return context;
+    };
+
     userController.extractQuery = (kafkaRequest) => {
-        let query = JSON.parse(kafkaRequest.value).query;
+        let query = JSON.parse(kafkaRequest.value).request.query;
         if(query === undefined || query === null) {
-            userController.handleError('query is empty', kafkaRequest);
+            let context;
+            context = userController.extractContext(kafkaRequest);
+            context.response = {error: 'query is empty'};
+            kafkaService.send(kafkaRequest.topic, context);
         }
         else {
             return query;
         }
     };
 
-    userController.extractProfile = (kafkaRequest) => {
-        let profile = JSON.parse(kafkaRequest.value).profile;
+    userController.extractWriteData = (kafkaRequest) => {
+        let profile = JSON.parse(kafkaRequest.value).request.writeData;
         if(profile === undefined || profile === null) {
-            userController.handleError('profile is empty', kafkaRequest);
+            let context;
+            context = userController.extractContext(kafkaRequest);
+            context.response = {error: 'profile is empty'};
+            kafkaService.send(kafkaRequest.topic, context);
         }
         else {
             return profile;
         }
-    };
-
-    userController.extractTopic = (kafkaRequest) => {
-        // let topic = JSON.parse(kafkaRequest.topic);
-        let topic = kafkaRequest.topic;
-
-        if(topic === undefined || topic === null) {
-            userController.handleError('topic is null', kafkaRequest);
-        }
-        else {
-            return topic;
-        }
-    };
-
-    userController.extractRequestId = (kafkaRequest) => {
-        let requestId = JSON.parse(kafkaRequest.value).requestId;
-
-        if(requestId === undefined || requestId === null) {
-            userController.handleError('requestId is null', kafkaRequest);
-        }
-        else {
-            return requestId;
-        }
-    };
-
-    userController.handleError = (errorName, error) => {
-        console.log(errorName);
-        console.log(error);
-        console.log('----------------');
     };
 
     return userController;
