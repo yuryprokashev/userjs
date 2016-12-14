@@ -39,11 +39,12 @@ module.exports = (userService, kafkaService) =>{
         userService.findOne(query)
             .then(
                 (result) => {
+                    console.log(JSON.stringify(result));
                     context.response = result;
                     kafkaService.send('user-find-one-response', context);
                 },
                 (error) => {
-                    console.log(error);
+                    console.log(JSON.stringify(error));
                     context.response = error;
                     kafkaService.send('user-find-one-response', context);
                 }
