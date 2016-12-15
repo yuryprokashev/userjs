@@ -16,7 +16,7 @@ module.exports = db => {
                     .exec(
                         (err, result) => {
                             if(err){
-                                return reject(err);
+                                return reject({error: err});
                             }
                             resolve(result);
                         }
@@ -34,13 +34,13 @@ module.exports = db => {
                 User.findOneAndUpdate(
                     query,
                     {
-                        $set: userService.createSetQuery(profile)
+                        $set: createSetQuery(profile)
                     },
                     {upsert: true, 'new': true}
                 ).exec(
                     (err, result) => {
                         if(err) {
-                            return reject(err);
+                            return reject({error: err});
                         }
                         resolve(result);
                     }
@@ -50,7 +50,7 @@ module.exports = db => {
 
     };
 
-    userService.createSetQuery = (profile) => {
+    const createSetQuery = (profile) => {
         let setQuery = {};
         if(profile.provider === 'facebook') {
             setQuery = {

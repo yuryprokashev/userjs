@@ -26,5 +26,5 @@ const kafkaBus = kafkaBusFactory(kafkaHost, 'User-Service');
 const userService = userServiceFactory(db);
 const kafkaService = kafkaServiceFactory(kafkaBus);
 const userController = userControllerFactory(userService, kafkaService);
-userController.subscribe('user-find-one-request', userController.findOne);
-userController.subscribe('user-find-one-and-update-request', userController.findOneAndUpdate);
+kafkaService.subscribe('user-find-one-request', userController.findOne);
+kafkaService.subscribe('user-find-one-and-update-request', userController.findOneAndUpdate);
