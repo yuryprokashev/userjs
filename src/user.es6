@@ -51,6 +51,7 @@ kafkaBus.producer.on('ready', ()=> {
         userCtrl = userControllerFactory(userService, kafkaService);
 
         kafkaListeners = configService.get(SERVICE_NAME).kafkaListeners;
+        console.log(kafkaListeners);
 
         kafkaService.subscribe(kafkaListeners.findOne, userCtrl.findOne);
         kafkaService.subscribe(kafkaListeners.findOneAndUpdate, userCtrl.findOneAndUpdate);
