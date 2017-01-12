@@ -2,6 +2,7 @@
  *Created by py on 14/11/2016
  */
 'use strict';
+const SERVICE_NAME = 'userjs';
 const KAFKA_TEST = "54.154.211.165";
 const KAFKA_PROD = "54.154.226.55";
 const parseProcessArgs = require('./parseProcessArgs.es6');
@@ -18,13 +19,40 @@ const userServiceFactory = require('./userServiceFactory.es6');
 const userControllerFactory = require('./userControllerFactory.es6');
 const kafkaServiceFactory = require('./kafkaServiceFactory.es6');
 const kafkaBusFactory = require('./kafkaBusFactory.es6');
+const configFactory = require('./configFactory.es6');
+
+let kafkaBus,
+    db;
+
+let kafkaService,
+    configService,
+    userService;
+
+let userCtrl;
+
+let dbConfig,
+    dbConnectStr,
+    kafkaListeners;
 
 // Instantiate app components
-const db = dbFactory("mongodb://localhost:27017/pfin");
-const kafkaBus = kafkaBusFactory(kafkaHost, 'User-Service');
+kafkaBus = kafkaBusFactory(kafkaHost, SERVICE_NAME);
+kafkaService = kafkaServiceFactory(kafkaBus);
 
-const userService = userServiceFactory(db);
-const kafkaService = kafkaServiceFactory(kafkaBus);
-const userController = userControllerFactory(userService, kafkaService);
-kafkaService.subscribe('user-find-one-request', userController.findOne);
-kafkaService.subscribe('user-find-one-and-update-request', userController.findOneAndUpdate);
+kafkaBus.producer.on('ready', ()=> {
+    configService = configFactory(kafkaService);
+    configService.on('ready', () => {
+        dbConfig = configService.get(SERVICE_NAME).db;
+    });
+
+    dbConnectStr = `mongodb://${dbConfig.login}:${dbConfig.pwd}@${dbConfig.host}?authSource=${dbConfig.authSource}&authMechanism${dbConfig.authMechanism}`;
+    db = dbFactory(dbConnectStr);
+
+    userService = userServiceFactory(db);
+    userCtrl = userControllerFactory(userService, kafkaService);
+
+    kafkaListeners = configService.get(SERVICE_NAME).kafkaListeners;
+
+    kafkaService.subscribe(kafkaListeners.findOne, userCtrl.findOne);
+    kafkaService.subscribe(kafkaListeners.findOneAndUpdate, userCtrl.findOneAndUpdate);
+
+});
