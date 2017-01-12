@@ -42,17 +42,17 @@ kafkaBus.producer.on('ready', ()=> {
     configService = configFactory(kafkaService);
     configService.on('ready', () => {
         dbConfig = configService.get(SERVICE_NAME).db;
+
+        dbConnectStr = `mongodb://${dbConfig.login}:${dbConfig.pwd}@${dbConfig.host}?authSource=${dbConfig.authSource}&authMechanism${dbConfig.authMechanism}`;
+        db = dbFactory(dbConnectStr);
+
+        userService = userServiceFactory(db);
+        userCtrl = userControllerFactory(userService, kafkaService);
+
+        kafkaListeners = configService.get(SERVICE_NAME).kafkaListeners;
+
+        kafkaService.subscribe(kafkaListeners.findOne, userCtrl.findOne);
+        kafkaService.subscribe(kafkaListeners.findOneAndUpdate, userCtrl.findOneAndUpdate);
+
     });
-
-    dbConnectStr = `mongodb://${dbConfig.login}:${dbConfig.pwd}@${dbConfig.host}?authSource=${dbConfig.authSource}&authMechanism${dbConfig.authMechanism}`;
-    db = dbFactory(dbConnectStr);
-
-    userService = userServiceFactory(db);
-    userCtrl = userControllerFactory(userService, kafkaService);
-
-    kafkaListeners = configService.get(SERVICE_NAME).kafkaListeners;
-
-    kafkaService.subscribe(kafkaListeners.findOne, userCtrl.findOne);
-    kafkaService.subscribe(kafkaListeners.findOneAndUpdate, userCtrl.findOneAndUpdate);
-
 });
