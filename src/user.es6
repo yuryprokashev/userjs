@@ -20,6 +20,7 @@ const userControllerFactory = require('./userControllerFactory.es6');
 const kafkaServiceFactory = require('./kafkaServiceFactory.es6');
 const kafkaBusFactory = require('./kafkaBusFactory.es6');
 const configFactory = require('./configFactory.es6');
+const buildMongoConStr = require('./helpers/buildConnString.es6');
 
 let kafkaBus,
     db;
@@ -44,7 +45,7 @@ kafkaBus.producer.on('ready', ()=> {
         dbConfig = configService.get(SERVICE_NAME).db;
         console.log(dbConfig);
 
-        dbConnectStr = `mongodb://${dbConfig.login}:${dbConfig.pwd}@${dbConfig.host}/${dbConfig.name}?authSource=${dbConfig.authSource}&authMechanism${dbConfig.authMechanism}`;
+        dbConnectStr = buildMongoConStr(dbConfig);
         db = dbFactory(dbConnectStr);
 
         userService = userServiceFactory(db);
