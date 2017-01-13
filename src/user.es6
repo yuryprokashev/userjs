@@ -3,6 +3,7 @@
  */
 'use strict';
 const SERVICE_NAME = 'userjs';
+
 const KAFKA_TEST = "54.154.211.165";
 const KAFKA_PROD = "54.154.226.55";
 const parseProcessArgs = require('./parseProcessArgs.es6');
@@ -43,7 +44,7 @@ kafkaBus.producer.on('ready', ()=> {
     configService = configFactory(kafkaService);
     configService.on('ready', () => {
         dbConfig = configService.get(SERVICE_NAME).db;
-        console.log(dbConfig);
+        // console.log(dbConfig);
 
         dbConnectStr = buildMongoConStr(dbConfig);
         db = dbFactory(dbConnectStr);
