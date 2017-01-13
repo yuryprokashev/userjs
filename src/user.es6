@@ -44,7 +44,7 @@ kafkaBus.producer.on('ready', ()=> {
         dbConfig = configService.get(SERVICE_NAME).db;
         console.log(dbConfig);
 
-        dbConnectStr = `mongodb://${dbConfig.login}:${dbConfig.pwd}@${dbConfig.host}?authSource=${dbConfig.authSource}&authMechanism${dbConfig.authMechanism}`;
+        dbConnectStr = `mongodb://${dbConfig.login}:${dbConfig.pwd}@${dbConfig.host}/${dbConfig.name}?authSource=${dbConfig.authSource}&authMechanism${dbConfig.authMechanism}`;
         db = dbFactory(dbConnectStr);
 
         userService = userServiceFactory(db);
