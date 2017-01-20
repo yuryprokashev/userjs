@@ -88,6 +88,8 @@ const userSchema = new mongoose.Schema( {
         createdAt: {
             type: Number,
             required: true,
+            get: v => Math.round(v),
+            set: v => Math.round(v),
             default: new Date().valueOf()
         }
     }
