@@ -89,7 +89,7 @@ const userSchema = new mongoose.Schema( {
             type: Number,
             required: true,
             get: v => {return Math.round(v)},
-            set: v => {return Math.round(v)}
+            set: v => {return Math.round(v)},
             default: new Date().valueOf()
         }
     }
