@@ -36,7 +36,7 @@ module.exports = db => {
                     {
                         $set: createSetQuery(profile)
                     },
-                    {upsert: true, 'new': true}
+                    {upsert: true, 'new': true, setDefaultsOnInsert: true}
                 ).exec(
                     (err, result) => {
                         if(err) {
@@ -51,7 +51,7 @@ module.exports = db => {
     };
 
     const createSetQuery = (profile) => {
-        let setQuery = {};
+        let setQuery = {}; // TODO. Add default fields of profile here
         if(profile.provider === 'facebook') {
             setQuery = {
                 'public.name.familyName': profile._json.last_name || null,

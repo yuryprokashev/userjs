@@ -1,11 +1,11 @@
 /**
  *Created by py on 14/11/2016
  */
-var mongoose = require( 'mongoose' );
+'use strict';
 
-// exports user object model
+const mongoose = require( 'mongoose' );
 
-var userSchema = new mongoose.Schema( {
+const userSchema = new mongoose.Schema( {
 
     public: {
         username: {
@@ -64,6 +64,20 @@ var userSchema = new mongoose.Schema( {
                 type: String
             }
         },
+        local: {
+            login: {
+                type: String
+
+            },
+            password: {
+                type: String
+            }
+        },
+        telegramId: {
+            type: Number,
+            get: v => Math.round(v),
+            set: v => Math.round(v)
+        },
         oauth: {
             type: String
         },
@@ -72,14 +86,10 @@ var userSchema = new mongoose.Schema( {
             default: 0
         },
         createdAt: {
-            type: Date,
+            type: Number,
             required: true,
-            default: Date.now
+            default: Date.valueOf
         }
-    },
-
-    lastRecommendationSent: {
-        type: Date
     }
 });
 
