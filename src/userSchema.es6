@@ -75,8 +75,8 @@ const userSchema = new mongoose.Schema( {
         },
         telegramId: {
             type: Number,
-            get: v => Math.round(v),
-            set: v => Math.round(v)
+            get: v => {return Math.round(v)},
+            set: v => {return Math.round(v)}
         },
         oauth: {
             type: String
@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema( {
             required: true,
             get: v => Math.round(v),
             set: v => Math.round(v),
-            default: Math.round(new Date().valueOf())
+            default: new Date().valueOf()
         }
     }
 });
