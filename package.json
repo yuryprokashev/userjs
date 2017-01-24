@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "kafka-node": "^1.0.5",
-    "mongoose": "^4.6.7"
+    "mongoose": "^4.6.7",
+    "my-kafka": "file:../shared/myKafka"
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
