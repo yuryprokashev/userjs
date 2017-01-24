@@ -15,11 +15,11 @@ let kafkaHost = (function(bool){
 })(args[0].isProd);
 
 // Load factory modules
+const kafkaBusFactory = require('my-kafka').kafkaBusFactory;
+const kafkaServiceFactory = require('my-kafka').kafkaServiceFactory;
 const dbFactory = require('./dbFactory.es6');
 const userServiceFactory = require('./userServiceFactory.es6');
 const userControllerFactory = require('./userControllerFactory.es6');
-const kafkaServiceFactory = require('./kafkaServiceFactory.es6');
-const kafkaBusFactory = require('./kafkaBusFactory.es6');
 const configFactory = require('./configFactory.es6');
 const buildMongoConStr = require('./helpers/buildConnString.es6');
 
