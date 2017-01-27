@@ -24,7 +24,7 @@ const configCtrlFactory = require('my-config').configCtrlFactory;
 
 const dbFactory = require('./dbFactory.es6');
 const userServiceFactory = require('./userServiceFactory.es6');
-const userControllerFactory = require('./userControllerFactory.es6');
+const userCtrlFactory = require('./userCtrlFactory.es6');
 
 const buildMongoConStr = require('./helpers/buildConnString.es6');
 
@@ -62,7 +62,7 @@ kafkaBus.producer.on('ready', ()=> {
                 db = dbFactory(dbConnectStr);
 
                 userService = userServiceFactory(db);
-                userCtrl = userControllerFactory(userService, kafkaService);
+                userCtrl = userCtrlFactory(userService, kafkaService);
 
                 kafkaListeners = configService.read(SERVICE_NAME, 'kafkaListeners');
 
@@ -79,24 +79,3 @@ kafkaBus.producer.on('ready', ()=> {
     );
 });
 
-//
-// kafkaBus.producer.on('ready', ()=> {
-//     configService = configFactory(kafkaService);
-//     configService.on('ready', () => {
-//         dbConfig = configService.get(SERVICE_NAME).db;
-//         // console.log(dbConfig);
-//
-//         dbConnectStr = buildMongoConStr(dbConfig);
-//         db = dbFactory(dbConnectStr);
-//
-//         userService = userServiceFactory(db);
-//         userCtrl = userControllerFactory(userService, kafkaService);
-//
-//         kafkaListeners = configService.get(SERVICE_NAME).kafkaListeners;
-//         console.log(kafkaListeners);
-//
-//         kafkaService.subscribe(kafkaListeners.findOne, userCtrl.findOne);
-//         kafkaService.subscribe(kafkaListeners.findOneAndUpdate, userCtrl.findOneAndUpdate);
-//
-//     });
-// });
