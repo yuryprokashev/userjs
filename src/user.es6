@@ -17,20 +17,27 @@ let kafkaHost = (function(bool){
 // Load factory modules
 const kafkaBusFactory = require('my-kafka').kafkaBusFactory;
 const kafkaServiceFactory = require('my-kafka').kafkaServiceFactory;
+
+const configObjectFactory = require('my-config').configObjectFactory;
+const configServiceFactory = require('my-config').configServiceFactory;
+const configCtrlFactory = require('my-config').configCtrlFactory;
+
 const dbFactory = require('./dbFactory.es6');
 const userServiceFactory = require('./userServiceFactory.es6');
 const userControllerFactory = require('./userControllerFactory.es6');
-const configFactory = require('./configFactory.es6');
+
 const buildMongoConStr = require('./helpers/buildConnString.es6');
 
 let kafkaBus,
-    db;
+    db,
+    configObject;
 
 let kafkaService,
     configService,
     userService;
 
-let userCtrl;
+let userCtrl,
+    configCtrl;
 
 let dbConfig,
     dbConnectStr,
@@ -41,22 +48,55 @@ kafkaBus = kafkaBusFactory(kafkaHost, SERVICE_NAME);
 kafkaService = kafkaServiceFactory(kafkaBus);
 
 kafkaBus.producer.on('ready', ()=> {
-    configService = configFactory(kafkaService);
-    configService.on('ready', () => {
-        dbConfig = configService.get(SERVICE_NAME).db;
-        // console.log(dbConfig);
 
-        dbConnectStr = buildMongoConStr(dbConfig);
-        db = dbFactory(dbConnectStr);
+    configObject = configObjectFactory(SERVICE_NAME);
+    configObject.init().then(
+        (config) => {
+            configService = configServiceFactory(config);
+            configCtrl = configCtrlFactory(configService, kafkaService);
+            kafkaService.subscribe('get-config-response', configCtrl.writeConfig);
+            kafkaService.send('get-config-request', configObject);
+            configCtrl.on('ready', () => {
+                dbConfig = configService.read(SERVICE_NAME, 'db');
+                dbConnectStr = buildMongoConStr(dbConfig);
+                db = dbFactory(dbConnectStr);
 
-        userService = userServiceFactory(db);
-        userCtrl = userControllerFactory(userService, kafkaService);
+                userService = userServiceFactory(db);
+                userCtrl = userControllerFactory(userService, kafkaService);
 
-        kafkaListeners = configService.get(SERVICE_NAME).kafkaListeners;
-        console.log(kafkaListeners);
+                kafkaListeners = configService.read(SERVICE_NAME, 'kafkaListeners');
 
-        kafkaService.subscribe(kafkaListeners.findOne, userCtrl.findOne);
-        kafkaService.subscribe(kafkaListeners.findOneAndUpdate, userCtrl.findOneAndUpdate);
-
-    });
+                kafkaService.subscribe(kafkaListeners.findOne, userCtrl.findOne);
+                kafkaService.subscribe(kafkaListeners.findOneAndUpdate, userCtrl.findOneAndUpdate);
+            });
+            configCtrl.on('error', (args) => {
+                console.log(args);
+            });
+        },
+        (err) => {
+            console.log(`ConfigObject Promise rejected ${JSON.stringify(err.error)}`);
+        }
+    );
 });
+
+//
+// kafkaBus.producer.on('ready', ()=> {
+//     configService = configFactory(kafkaService);
+//     configService.on('ready', () => {
+//         dbConfig = configService.get(SERVICE_NAME).db;
+//         // console.log(dbConfig);
+//
+//         dbConnectStr = buildMongoConStr(dbConfig);
+//         db = dbFactory(dbConnectStr);
+//
+//         userService = userServiceFactory(db);
+//         userCtrl = userControllerFactory(userService, kafkaService);
+//
+//         kafkaListeners = configService.get(SERVICE_NAME).kafkaListeners;
+//         console.log(kafkaListeners);
+//
+//         kafkaService.subscribe(kafkaListeners.findOne, userCtrl.findOne);
+//         kafkaService.subscribe(kafkaListeners.findOneAndUpdate, userCtrl.findOneAndUpdate);
+//
+//     });
+// });
