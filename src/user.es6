@@ -15,6 +15,8 @@ let kafkaHost = (function(bool){
 })(args[0].isProd);
 
 // Load factory modules
+
+const dbFactory = require('./dbFactory.es6');
 const kafkaBusFactory = require('my-kafka').kafkaBusFactory;
 const kafkaServiceFactory = require('my-kafka').kafkaServiceFactory;
 
@@ -22,10 +24,9 @@ const configObjectFactory = require('my-config').configObjectFactory;
 const configServiceFactory = require('my-config').configServiceFactory;
 const configCtrlFactory = require('my-config').configCtrlFactory;
 
-const dbFactory = require('./dbFactory.es6');
+
 const userServiceFactory = require('./userServiceFactory.es6');
 const userCtrlFactory = require('./userCtrlFactory.es6');
-
 const buildMongoConStr = require('./helpers/buildConnString.es6');
 
 let kafkaBus,
@@ -40,42 +41,39 @@ let userCtrl,
     configCtrl;
 
 let dbConfig,
-    dbConnectStr,
-    kafkaListeners;
+    dbConnectStr;
+
+let bootstrapComponents,
+    handleError;
+
+bootstrapComponents = () => {
+    configObject = configObjectFactory(SERVICE_NAME);
+    configService = configServiceFactory(configObject);
+    configCtrl = configCtrlFactory(configService, kafkaService);
+
+    configCtrl.on('ready', () => {
+        dbConfig = configService.read(`${SERVICE_NAME}.db`);
+        dbConnectStr = buildMongoConStr(dbConfig);
+        db = dbFactory(dbConnectStr);
+
+        userService = userServiceFactory(db);
+        userCtrl = userCtrlFactory(userService, configService, kafkaService);
+
+    });
+
+    configCtrl.on('error', (args) => {
+        handleError(args);
+    })
+};
+
+handleError = (err) => {
+    //TODO. Implement centralized error logging.
+    console.log(err);
+};
 
 // Instantiate app components
 kafkaBus = kafkaBusFactory(kafkaHost, SERVICE_NAME);
 kafkaService = kafkaServiceFactory(kafkaBus);
 
-kafkaBus.producer.on('ready', ()=> {
-
-    configObject = configObjectFactory(SERVICE_NAME);
-    configObject.init().then(
-        (config) => {
-            configService = configServiceFactory(config);
-            configCtrl = configCtrlFactory(configService, kafkaService);
-            kafkaService.subscribe('get-config-response', true, configCtrl.writeConfig);
-            kafkaService.send('get-config-request', true, configObject);
-            configCtrl.on('ready', () => {
-                dbConfig = configService.read(SERVICE_NAME, 'db');
-                dbConnectStr = buildMongoConStr(dbConfig);
-                db = dbFactory(dbConnectStr);
-
-                userService = userServiceFactory(db);
-                userCtrl = userCtrlFactory(userService, kafkaService);
-
-                kafkaListeners = configService.read(SERVICE_NAME, 'kafkaListeners');
-
-                kafkaService.subscribe(kafkaListeners.findOne, false, userCtrl.findOne);
-                kafkaService.subscribe(kafkaListeners.findOneAndUpdate, false, userCtrl.findOneAndUpdate);
-            });
-            configCtrl.on('error', (args) => {
-                console.log(args);
-            });
-        },
-        (err) => {
-            console.log(`ConfigObject Promise rejected ${JSON.stringify(err.error)}`);
-        }
-    );
-});
+kafkaBus.producer.on('ready', bootstrapComponents);
 

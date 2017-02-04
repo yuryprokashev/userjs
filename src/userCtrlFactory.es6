@@ -2,78 +2,49 @@
  *Created by py on 14/11/2016
  */
 "use strict";
-module.exports = (userService, kafkaService) =>{
+module.exports = (userService, configService, kafkaService) =>{
 
-    const extractContext = (kafkaMessage) => {
-        let context;
-        context = JSON.parse(kafkaMessage.value);
-        if(context === undefined) {
-            let newContext = {};
-            newContext.response = {error: 'arrived context is empty'};
-            kafkaService.send(makeResponseTopic(kafkaMessage), newContext);
-        }
-        return context;
-    };
+    let userController = {};
 
-    const extractQuery = (kafkaMessage) => {
-        let query = JSON.parse(kafkaMessage.value).request.query;
-        if(query === undefined || query === null) {
-            let context;
-            context = extractContext(kafkaMessage);
-            context.response = {error: 'query is empty'};
-            kafkaService.send(makeResponseTopic(kafkaMessage), context);
-        }
-        else {
-            return query;
-        }
-    };
+    let kafkaListeners,
+        isSignedMessage;
 
-    const extractWriteData =(kafkaMessage) => {
-        let profile = JSON.parse(kafkaMessage.value).request.writeData;
-        if(profile === undefined || profile === null) {
-            let context;
-            context = extractContext(kafkaMessage);
-            context.response = {error: 'profile is empty'};
-            kafkaService.send(makeResponseTopic(kafkaMessage), context);
-        }
-        else {
-            return profile;
-        }
-    };
+    let findOneAndUpdate,
+        findOne;
 
-    const makeResponseTopic = (kafkaMessage) => {
-        let re = /-request/;
-        return kafkaMessage.topic.replace(re, '-response');
-    };
-    const userController = {};
-
-    //@param: KafkaRequest - which is kafka message containing query in body.
-    //@function: parses KafkaRequest; calls userService to find user data; sends response to Kafka
-    userController.findOneAndUpdate = (kafkaMessage) => {
+    findOneAndUpdate = kafkaMessage => {
         
         let context, query, profile;
 
-        context = extractContext(kafkaMessage);
-        query = extractQuery(kafkaMessage);
-        profile = extractWriteData(kafkaMessage);
+        let signRequest, topic;
+
+        signRequest = false;
+        topic = kafkaService.makeResponseTopic(kafkaMessage);
+
+        context = kafkaService.extractContext(kafkaMessage);
+        query = kafkaService.extractQuery(kafkaMessage);
+        profile = kafkaService.extractWriteData(kafkaMessage);
 
         userService.findOneAndUpdate(query, profile)
             .then(
                 (result) => {
+
                     context.response = result;
-                    kafkaService.send(makeResponseTopic(kafkaMessage), context);
+                    kafkaService.send(topic, signRequest, context);
                 },
                 (error) => {
                     context.response = error;
-                    kafkaService.send(makeResponseTopic(kafkaMessage), context);
+                    kafkaService.send(topic, signRequest, context);
                 }
             );
     };
 
-    //@param: KafkaRequest - which is kafka message containing query in body.
-    //@function: parses KafkaRequest; calls userService to find user data; sends response to Kafka
-    userController.findOne = (kafkaMessage) => {
+    findOne = kafkaMessage => {
         let context, query;
+        let signRequest, topic;
+
+        signRequest = false;
+        topic = kafkaService.makeResponseTopic(kafkaMessage);
 
         context = extractContext(kafkaMessage);
         query = extractQuery(kafkaMessage);
@@ -83,15 +54,22 @@ module.exports = (userService, kafkaService) =>{
                 (result) => {
                     // console.log(JSON.stringify(result));
                     context.response = result;
-                    kafkaService.send(makeResponseTopic(kafkaMessage), context);
+                    kafkaService.send(topic, signRequest, context);
                 },
                 (error) => {
                     // console.log(JSON.stringify(error));
                     context.response = error;
-                    kafkaService.send(makeResponseTopic(kafkaMessage), context);
+                    kafkaService.send(topic, signRequest, context);
                 }
             )
     };
+
+    kafkaListeners = configService.read('userjs.kafkaListeners');
+    isSignedMessage = false;
+    if(kafkaListeners !== undefined) {
+        kafkaService.subscribe(kafkaListeners.findOne, isSignedMessage, findOne);
+        kafkaService.subscribe(kafkaListeners.findOneAndUpdate, isSignedMessage, findOneAndUpdate);
+    }
 
     return userController;
 };
