@@ -2,9 +2,9 @@
  *Created by py on 14/11/2016
  */
 "use strict";
-module.exports = (userService, configService, kafkaService) =>{
+module.exports = (userService, configService, kafkaService, EventEmitter) =>{
 
-    let userController = {};
+    let userController = new EventEmitter();
 
     let kafkaListeners;
 

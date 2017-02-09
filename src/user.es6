@@ -15,6 +15,7 @@ let kafkaHost = (function(bool){
 })(args[0].isProd);
 
 // Load factory modules
+const EventEmitter = require('events').EventEmitter;
 
 const dbFactory = require('./dbFactory.es6');
 const kafkaBusFactory = require('my-kafka').kafkaBusFactory;
@@ -47,17 +48,19 @@ let bootstrapComponents,
     handleError;
 
 bootstrapComponents = () => {
-    configObject = configObjectFactory(SERVICE_NAME);
-    configService = configServiceFactory(configObject);
-    configCtrl = configCtrlFactory(configService, kafkaService);
+    configObject = configObjectFactory(SERVICE_NAME, EventEmitter);
+    configService = configServiceFactory(configObject, EventEmitter);
+    configCtrl = configCtrlFactory(configService, kafkaService, EventEmitter);
+
+    // loggerAgent.listenLoggerEventsIn([configCtrl, configService, configObject]);
 
     configCtrl.on('ready', () => {
         dbConfig = configService.read(`${SERVICE_NAME}.db`);
         dbConnectStr = buildMongoConStr(dbConfig);
-        db = dbFactory(dbConnectStr);
+        db = dbFactory(dbConnectStr, EventEmitter);
 
-        userService = userServiceFactory(db);
-        userCtrl = userCtrlFactory(userService, configService, kafkaService);
+        userService = userServiceFactory(db, EventEmitter);
+        userCtrl = userCtrlFactory(userService, configService, kafkaService, EventEmitter);
 
     });
 
@@ -72,8 +75,8 @@ handleError = (err) => {
 };
 
 // Instantiate app components
-kafkaBus = kafkaBusFactory(kafkaHost, SERVICE_NAME);
-kafkaService = kafkaServiceFactory(kafkaBus);
+kafkaBus = kafkaBusFactory(kafkaHost, SERVICE_NAME, EventEmitter);
+kafkaService = kafkaServiceFactory(kafkaBus, EventEmitter);
 
 kafkaBus.producer.on('ready', bootstrapComponents);
 

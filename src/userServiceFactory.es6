@@ -3,9 +3,9 @@
  */
 'use strict';
 
-module.exports = db => {
+module.exports = (db, EventEmitter) => {
     let User = db.model('User', require('./userSchema.es6'), 'users');
-    const userService = {};
+    const userService = new EventEmitter();
     //@param: query - query object to be passed to User model.
     //@return: Promise, which will resolve in user data, or not found error.
     userService.findOne = (query)=> {
