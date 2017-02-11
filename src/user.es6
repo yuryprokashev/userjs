@@ -44,8 +44,7 @@ let userCtrl,
 let dbConfig,
     dbConnectStr;
 
-let bootstrapComponents,
-    handleError;
+let bootstrapComponents;
 
 bootstrapComponents = () => {
     configObject = configObjectFactory(SERVICE_NAME, EventEmitter);
@@ -54,6 +53,8 @@ bootstrapComponents = () => {
 
     // loggerAgent.listenLoggerEventsIn([configCtrl, configService, configObject]);
 
+    configCtrl.start();
+
     configCtrl.on('ready', () => {
         dbConfig = configService.read(`${SERVICE_NAME}.db`);
         dbConnectStr = buildMongoConStr(dbConfig);
@@ -61,17 +62,9 @@ bootstrapComponents = () => {
 
         userService = userServiceFactory(db, EventEmitter);
         userCtrl = userCtrlFactory(userService, configService, kafkaService, EventEmitter);
+        userCtrl.start();
 
     });
-
-    configCtrl.on('error', (args) => {
-        handleError(args);
-    })
-};
-
-handleError = (err) => {
-    //TODO. Implement centralized error logging.
-    console.log(err);
 };
 
 // Instantiate app components

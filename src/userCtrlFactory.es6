@@ -69,11 +69,13 @@ module.exports = (userService, configService, kafkaService, EventEmitter) =>{
             )
     };
 
-    kafkaListeners = configService.read('userjs.kafkaListeners');
-    if(kafkaListeners !== undefined) {
-        kafkaService.subscribe(kafkaListeners.findOne, findOne);
-        kafkaService.subscribe(kafkaListeners.findOneAndUpdate, findOneAndUpdate);
-    }
+    userController.start = () => {
+        kafkaListeners = configService.read('userjs.kafkaListeners');
+        if(kafkaListeners !== undefined) {
+            kafkaService.subscribe(kafkaListeners.findOne, findOne);
+            kafkaService.subscribe(kafkaListeners.findOneAndUpdate, findOneAndUpdate);
+        }
+    };
 
     return userController;
 };
